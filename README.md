@@ -29,6 +29,8 @@ $$ F1 = {2 * {{Precision * Recall} \over {Precision + Recall}}} $$
 
 ## Canvas проекта
 
-![AI Canvas](ai-canvas-2023-01-02-0043.jpeg)
+![Anti-fraud AI Canvas](ai-canvas-2023-01-02-0043.jpeg)
 
-## Roadmap
+## Дизайн системы
+
+![Anti-fraud System Design](anti-fraud-ml-system-design-2023-01-02-0241.jpeg)

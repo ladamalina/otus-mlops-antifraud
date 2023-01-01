@@ -10,10 +10,6 @@
 
 ## Ключевая метрика ML
 
-- `F1 >= 0.965` - комбинация Precision и Recall, удобная для оптимизации алгоритма
-
-$$ F1 = {2 * {{Precision * Recall} \over {Precision + Recall}}} $$
-
 - `Recall >= 0.98` позволит максимизировать долю обнаруженных среди всех мошеннических операций
 
 $$ Recall = {{TP} \over {TP + FN}} $$
@@ -22,12 +18,14 @@ $$ Recall = {{TP} \over {TP + FN}} $$
 
 $$ Precision = {{TP} \over {TP + FP}} $$
 
-Обозначения:
+- `F1 >= 0.965` - комбинация Precision и Recall, удобная для оптимизации алгоритма
+
+$$ F1 = {2 * {{Precision * Recall} \over {Precision + Recall}}} $$
 
 | |Positive<br/>(истинно мошенническая) |Negative<br/>(истинно клиентская) |
 |:----------------:|:-------------------------------:|:-----------------------------:|
-|Positive<br/>(предсказанная мошенническая) |TP<br/>True Positive |FP<br/>False Positive |
-|Negative<br/>(предсказанная клиентская) |FN<br/>False Negative |TN<br/>True Negative |
+|Positive<br/>(предсказана как мошенническая) |TP<br/>True Positive |FP<br/>False Positive |
+|Negative<br/>(предсказана как клиентская) |FN<br/>False Negative |TN<br/>True Negative |
 
 ## Canvas проекта
 

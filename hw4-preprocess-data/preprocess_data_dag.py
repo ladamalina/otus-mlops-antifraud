@@ -38,9 +38,8 @@ with DAG(
             "--s3_bucket", "mlops-data-nr",
             "--s3_bucket_prefix", "/fraud-data-processed",
         ],
-        # jars="/usr/lib/spark/jars/hadoop-aws-3.2.2.jar,/usr/lib/spark/jars/aws-java-sdk-bundle-1.11.563.jar,/usr/lib/spark/jars/iam-s3-credentials.jar",
         env_vars={"HADOOP_CONF_DIR": "/etc/hadoop/conf"},
-        # executor_cores=2,
-        # executor_memory="4g",
-        # driver_memory="4g",
+        executor_cores=2,
+        executor_memory="4g",
+        driver_memory="4g",
     )

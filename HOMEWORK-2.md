@@ -19,11 +19,11 @@ host_bucket = %(bucket)s.storage.yandexcloud.net
 
 ## Ресурсы кластера DataProc
 
-![DataProc resources](images/Screenshot 2023-01-19 at 15.34.58.png)
+![DataProc resources](images/Screenshot%202023-01-19%20at%2015.34.58.png)
 
 ## Данные в HDFS
 
-![HDFS anti-fraud](images/Screenshot 2023-01-19 at 16.53.32.png)
+![HDFS anti-fraud](images/Screenshot%202023-01-19%20at%2016.53.32.png)
 
 ## Сравнение затрат на S3 и HDFS
 

@@ -22,15 +22,19 @@ $$ Precision = {{TP} \over {TP + FP}} $$
 
 $$ F1 = {2 * {{Precision * Recall} \over {Precision + Recall}}} $$
 
-| |Positive<br/>(истинно мошенническая) |Negative<br/>(истинно клиентская) |
-|:----------------:|:-------------------------------:|:-----------------------------:|
-|Positive<br/>(предсказана как мошенническая) |TP<br/>True Positive |FP<br/>False Positive |
-|Negative<br/>(предсказана как клиентская) |FN<br/>False Negative |TN<br/>True Negative |
+|                                              | Positive<br/>(истинно мошенническая)  | Negative<br/>(истинно клиентская) |
+|:--------------------------------------------:|:-------------------------------------:|:---------------------------------:|
+| Positive<br/>(предсказана как мошенническая) |         TP<br/>True Positive          |      FP<br/>False Positive        |
+| Negative<br/>(предсказана как клиентская)    |         FN<br/>False Negative         |       TN<br/>True Negative        |
 
 ## Canvas проекта
 
-![Anti-fraud AI Canvas](ai-canvas-2023-01-02-0043.jpeg)
+![Anti-fraud AI Canvas](images/ai-canvas-2023-01-02-0043.jpeg)
+
+_([miro board](https://miro.com/app/board/uXjVP4xpNuQ=/))_
 
 ## Дизайн системы
 
-![Anti-fraud System Design](anti-fraud-ml-system-design-2023-01-02-0320.jpeg)
+![Anti-fraud System Design](images/anti-fraud-ml-system-design-2023-01-02-0320.jpeg)
+
+_([miro board](https://miro.com/app/board/uXjVP4xpNuQ=/))_

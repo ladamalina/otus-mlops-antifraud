@@ -63,4 +63,4 @@ host_bucket = %(bucket)s.storage.yandexcloud.net
 | Итого,  ₽/час |              **32.6**               |           **11.32**            |
 | Итого,  ₽/мес |             **23 472**              |           **8 150**            |
 
-![DataProc cost optimization](images/Screenshot 2023-01-19 at 15.36.56.png)
+![DataProc cost optimization](images/Screenshot%202023-01-19%20at%2015.36.56.png)

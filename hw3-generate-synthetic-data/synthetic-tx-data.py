@@ -229,12 +229,12 @@ with DAG(
         ti = kwargs["ti"]
         local_filepath = ti.xcom_pull(task_ids="generate_synthetic_txs", key="local_filepath")
 
-        logging.info(f"Removing file: {local_filepath}")
-        if os.path.exists(local_filepath):
+        logging.info(f"Removing file: {local_filepath=}")
+        if local_filepath and os.path.exists(local_filepath):
             os.remove(local_filepath)
             logging.info(f"File removed: {local_filepath}")
         else:
-            logging.info(f"Can not delete the file as it doesn't exists: {local_filepath}")
+            logging.info(f"Can not delete the file as it doesn't exists: {local_filepath=}")
     # [END cleanup_function]
 
     # [START main_flow]
@@ -257,6 +257,7 @@ with DAG(
     cleanup_task = PythonOperator(
         task_id="cleanup",
         python_callable=cleanup,
+        trigger_rule="all_done"
     )
 
     generate_synthetic_txs_task >> [upload_to_s3_task, upload_to_hdfs_task] >> cleanup_task

@@ -1,13 +1,27 @@
-# Сбор данных
+# Анти-фрод система
 
-1. Напишите скрипт, который генерирует новую порцию данных и сохраняет его в HDFS.
+## Сбор данных
 
-DAG: [synthetic-tx-data.py](hw3-generate-synthetic-data/synthetic-tx-data.py)
+### Скрипт, который генерирует новую порцию данных и сохраняет его в HDFS
 
-Airflow v2.2.3
+Скрипт: [generate_transaction_data.py](hw3-generate-transaction-data%2Fgenerate_transaction_data.py)
 
-Python 3.8.10 + [requirements.txt](requirements.txt)
+Airflow v2.2.3 + Python 3.8.10 + [requirements.txt](requirements.txt)
 
-2. Автоматизируйте регулярный запуск через AirFlow.
+### Регулярный запуск через AirFlow
 
-![Screenshot 2023-02-11 at 18.25.45.png](images%2FScreenshot%202023-02-11%20at%2018.25.45.png)
+Код DAG'а: [generate_transaction_data_dag.py](hw3-generate-transaction-data%2Fgenerate_transaction_data_dag.py)
+
+DAG в Airflow: http://158.160.53.21/tree?dag_id=generate_transaction_data_dag
+
+IP динамический, может измениться после рестарта VM.
+
+### Данные в HDFS
+
+![Screenshot 2023-03-05 at 00.59.56.png](images%2FScreenshot%202023-03-05%20at%2000.59.56.png)
+
+### Данные в S3
+
+S3 bucket: `mlops-data-nr`
+
+![Screenshot 2023-03-05 at 01.01.06.png](images%2FScreenshot%202023-03-05%20at%2001.01.06.png)

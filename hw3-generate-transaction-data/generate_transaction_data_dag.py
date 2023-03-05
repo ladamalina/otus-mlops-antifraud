@@ -15,7 +15,7 @@ with DAG(
     # [END default_args]
     description="Generate transaction data",
     schedule_interval="@once",
-    start_date=pendulum.datetime(2023, 1, 1, tz="UTC"),
+    start_date=pendulum.datetime(2022, 12, 4, tz="UTC"),
     catchup=False,
     tags=["mlops", "anti-fraud"],
     max_active_runs=1
@@ -27,7 +27,7 @@ with DAG(
         conn_id="yandex_cloud_spark",
         application="/home/airflow/dags/generate_transaction_data.py",
         application_args=[
-            "--i_customers", str(500000),
+            "--i_customers", str(250000),
             "--i_terminals", str(1000),
             "--i_days", str(1),
             "--i_start_date", "{{ ds }}",
@@ -36,8 +36,9 @@ with DAG(
             "--s3_bucket", "mlops-data-nr",
             "--s3_bucket_prefix", "/fraud-data-auto",
         ],
-        jars="/usr/lib/spark/jars/hadoop-aws-3.2.2.jar,/usr/lib/spark/jars/aws-java-sdk-bundle-1.11.563.jar,/usr/lib/spark/jars/iam-s3-credentials.jar",
+        # jars="/usr/lib/spark/jars/hadoop-aws-3.2.2.jar,/usr/lib/spark/jars/aws-java-sdk-bundle-1.11.563.jar,/usr/lib/spark/jars/iam-s3-credentials.jar",
         env_vars={"HADOOP_CONF_DIR": "/etc/hadoop/conf"},
+        conf={"spark.sql.broadcastTimeout": str(60*60*3)},
         # executor_cores=2,
         # executor_memory="2g",
         # driver_memory="2g",

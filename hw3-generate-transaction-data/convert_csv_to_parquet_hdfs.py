@@ -10,7 +10,11 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
 
 app_name = "convert-csv-to-parquet-hdfs"
 hdfs_host = "rc1a-dataproc-m-0phjwjdfohabk5n0.mdb.yandexcloud.net"

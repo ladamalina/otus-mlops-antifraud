@@ -1,9 +1,6 @@
-import findspark
-findspark.init()
-findspark.find()
-
 import argparse
 import datetime
+import findspark
 import logging
 import numpy as np
 import pandas as pd
@@ -12,9 +9,6 @@ import time
 
 from pandarallel import pandarallel
 from pyspark.sql import SparkSession
-
-
-pandarallel.initialize(progress_bar=True)
 
 
 def generate_customer_profiles_table(n_customers, random_state=0):
@@ -224,7 +218,16 @@ def add_frauds(customer_profiles_table, terminal_profiles_table, transactions_df
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+    )
+
+    findspark.init()
+    findspark.find()
+
+    pandarallel.initialize(progress_bar=True)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--i_customers", type=int, default=50000)
@@ -246,8 +249,14 @@ def main():
     logging.info(f"{args.s3_bucket=}")
     logging.info(f"{args.s3_bucket_prefix=}")
 
-    # customer_profiles_table = generate_customer_profiles_table(n_customers=I_CUSTOMERS, random_state = 0)
-    # terminal_profiles_table = generate_terminal_profiles_table(n_terminals=I_TERMINALS, random_state = 0)
+    spark = (
+        SparkSession.builder
+        .appName("generate_transaction_data")
+        .master("yarn")
+        .config("spark.sql.broadcastTimeout", str(60 * 60 * 3))
+        .getOrCreate()
+    )
+    spark.conf.set('spark.sql.repl.eagerEval.enabled', True)
 
     (customer_profiles_table, terminal_profiles_table, transactions_df) = \
         generate_dataset(n_customers=args.i_customers,
@@ -263,21 +272,9 @@ def main():
     customer_profiles_table['available_terminals'] = customer_profiles_table.apply(
         lambda x: get_list_terminals_within_radius(x, x_y_terminals=x_y_terminals, r=50), axis=1)
 
-    # transaction_table_customer_0 = generate_transactions_table(customer_profiles_table.iloc[0],
-    #                                                            start_date=I_START_DATE,
-    #                                                            nb_days=I_DAYS)
-
     transactions_df = add_frauds(customer_profiles_table, terminal_profiles_table, transactions_df)
 
     start_date = datetime.datetime.strptime(args.i_start_date, "%Y-%m-%d")
-
-    spark = (
-        SparkSession.builder
-        .appName("generate_transaction_data")
-        .master("yarn")
-        .getOrCreate()
-    )
-    spark.conf.set('spark.sql.repl.eagerEval.enabled', True)
 
     for day in range(transactions_df.tx_time_days.max() + 1):
         transactions_day_df = transactions_df[transactions_df.tx_time_days == day].sort_values('tx_time_seconds')

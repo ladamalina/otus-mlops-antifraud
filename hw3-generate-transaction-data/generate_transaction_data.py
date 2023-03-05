@@ -14,7 +14,7 @@ from pandarallel import pandarallel
 from pyspark.sql import SparkSession
 
 
-pandarallel.initialize(progress_bar=True, nb_workers=3)
+pandarallel.initialize(progress_bar=True)
 
 
 def generate_customer_profiles_table(n_customers, random_state=0):

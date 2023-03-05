@@ -23,6 +23,7 @@ with DAG(
 
     generate_transaction_data_task = SparkSubmitOperator(
         task_id="generate_transaction_data",
+        name="generate_transaction_data_dag",
         conn_id="yandex_cloud_spark",
         application="/home/airflow/dags/generate_transaction_data.py",
         application_args=[

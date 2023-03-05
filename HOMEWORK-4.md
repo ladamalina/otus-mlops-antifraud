@@ -6,7 +6,9 @@
 
 Скрипт: [preprocess_data.py](hw4-preprocess-data%2Fpreprocess_data.py)
 
-Airflow v2.2.3 + Python 3.8.10 + [requirements.txt](requirements.txt)
+- Airflow v2.2.3
+- Spark 3.0.3
+- Python 3.8.10 + [requirements.txt](requirements.txt)
 
 ### Регулярный запуск через AirFlow
 

@@ -27,7 +27,7 @@ with DAG(
         conn_id="yandex_cloud_spark",
         application="/home/airflow/dags/generate_transaction_data.py",
         application_args=[
-            "--i_customers", str(250000),
+            "--i_customers", str(500000),
             "--i_terminals", str(1000),
             "--i_days", str(1),
             "--i_start_date", "{{ ds }}",

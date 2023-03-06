@@ -39,6 +39,6 @@ with DAG(
         env_vars={"HADOOP_CONF_DIR": "/etc/hadoop/conf"},
         conf={"spark.sql.broadcastTimeout": str(60*60*3)},
         # executor_cores=2,
-        # executor_memory="2g",
-        # driver_memory="2g",
+        # executor_memory="4g",
+        # driver_memory="4g",
     )

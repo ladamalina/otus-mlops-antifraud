@@ -36,7 +36,6 @@ with DAG(
             "--s3_bucket", "mlops-data-nr",
             "--s3_bucket_prefix", "/fraud-data-auto",
         ],
-        # jars="/usr/lib/spark/jars/hadoop-aws-3.2.2.jar,/usr/lib/spark/jars/aws-java-sdk-bundle-1.11.563.jar,/usr/lib/spark/jars/iam-s3-credentials.jar",
         env_vars={"HADOOP_CONF_DIR": "/etc/hadoop/conf"},
         conf={"spark.sql.broadcastTimeout": str(60*60*3)},
         # executor_cores=2,

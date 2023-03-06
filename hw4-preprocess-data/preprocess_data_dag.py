@@ -15,7 +15,7 @@ with DAG(
     # [END default_args]
     description="Preprocess data",
     schedule_interval="@once",
-    start_date=pendulum.datetime(2022, 12, 1, tz="UTC"),
+    start_date=pendulum.datetime(2022, 11, 27, tz="UTC"),
     catchup=False,
     tags=["mlops", "anti-fraud"],
     max_active_runs=1
@@ -29,8 +29,11 @@ with DAG(
         application_args=[
             "--date_from", "{{ ds }}",
             "--date_to", "{{ ds }}",
+            # "--date_from", "2022-11-27",
+            # "--date_to", "2022-12-03",
             "--hdfs_host", "{{ conn.yandex_cloud_hdfs.host }}",
-            "--hdfs_dirs_input", "/fraud-data-parquet,/fraud-data-auto",
+            "--hdfs_dirs_input", "/fraud-data-parquet/*.parquet,/fraud-data-auto/*.parquet",
+            # "--hdfs_dirs_input", "/fraud-data-parquet/2022-10-05.parquet,/fraud-data-parquet/2022-11-04.parquet",
             "--hdfs_dir_output", "/fraud-data-processed",
             "--s3_bucket", "mlops-data-nr",
             "--s3_bucket_prefix", "/fraud-data-processed",
@@ -38,6 +41,6 @@ with DAG(
         # jars="/usr/lib/spark/jars/hadoop-aws-3.2.2.jar,/usr/lib/spark/jars/aws-java-sdk-bundle-1.11.563.jar,/usr/lib/spark/jars/iam-s3-credentials.jar",
         env_vars={"HADOOP_CONF_DIR": "/etc/hadoop/conf"},
         # executor_cores=2,
-        # executor_memory="2g",
-        # driver_memory="2g",
+        # executor_memory="4g",
+        # driver_memory="4g",
     )

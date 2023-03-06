@@ -92,9 +92,9 @@ def preprocess_transactions(spark_df):
 
 
 def get_preprocessed_data(spark: SparkSession, dt_from: dt.datetime, dt_to: dt.datetime, hdfs_dirs_input: List[str]):
-    src_filepath = [f"{_}/*.parquet" for _ in hdfs_dirs_input]
-    logging.info(f"Reading {src_filepath}")
-    df = spark.read.schema(schema).parquet(*src_filepath)
+    # hdfs_dirs_input = [f"{_}/*.parquet" for _ in hdfs_dirs_input]
+    logging.info(f"Reading {hdfs_dirs_input}")
+    df = spark.read.schema(schema).parquet(*hdfs_dirs_input)
     dt_from_extra = dt_from - dt.timedelta(days=extra_window_in_days)
     logging.info(f"Extending {dt_from=} using {extra_window_in_days=}, {dt_from_extra=}")
     logging.info(f"Preprocess data using window {dt_from_extra} <= dt <= {dt_to}")
@@ -140,7 +140,7 @@ def main():
     parser.add_argument("--date_to", type=str, default=dt_today_str)
     parser.add_argument("--hdfs_host", type=str, required=True)
     parser.add_argument("--hdfs_dirs_input", type=str, required=True,
-                        help="HDFS folders with source files, comma separated")
+                        help="HDFS folders with source data, comma separated")
     parser.add_argument("--hdfs_dir_output", type=str, required=True)
     parser.add_argument("--s3_bucket", type=str, required=True)
     parser.add_argument("--s3_bucket_prefix", type=str, required=True)

@@ -25,9 +25,9 @@ dt_format_full = f"{dt_format} %H:%M:%S"
 dt_today = dt.datetime.today()
 dt_today_str = dt_today.strftime(dt_format)
 windows_size_in_days = [1, 3, 7]
-extra_window_in_days = max(windows_size_in_days)
 days_to_seconds = lambda i: i * 86400
 delay_window = 7
+extra_window_in_days = max(windows_size_in_days) + delay_window
 
 
 def get_customer_spending_behaviour_features(spark_df):

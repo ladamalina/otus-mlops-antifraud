@@ -17,3 +17,13 @@
 DAG в Airflow: http://158.160.45.254/tree?dag_id=preprocess_data_dag
 
 IP динамический, может измениться после рестарта VM.
+
+### Данные в HDFS
+
+![Screenshot 2023-03-07 at 22.41.03.png](images%2FScreenshot%202023-03-07%20at%2022.41.03.png)
+
+### Данные в S3
+
+S3 bucket: `mlops-data-nr`
+
+![Screenshot 2023-03-07 at 22.41.32.png](images%2FScreenshot%202023-03-07%20at%2022.41.32.png)

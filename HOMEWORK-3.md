@@ -18,10 +18,10 @@ IP динамический, может измениться после рест
 
 ### Данные в HDFS
 
-![Screenshot 2023-03-05 at 00.59.56.png](images%2FScreenshot%202023-03-05%20at%2000.59.56.png)
+![Screenshot 2023-03-07 at 16.28.26.png](images%2FScreenshot%202023-03-07%20at%2016.28.26.png)
 
 ### Данные в S3
 
 S3 bucket: `mlops-data-nr`
 
-![Screenshot 2023-03-05 at 01.01.06.png](images%2FScreenshot%202023-03-05%20at%2001.01.06.png)
+![Screenshot 2023-03-07 at 16.29.07.png](images%2FScreenshot%202023-03-07%20at%2016.29.07.png)

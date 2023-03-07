@@ -175,44 +175,53 @@ def add_frauds(customer_profiles_table, terminal_profiles_table, transactions_df
     transactions_df['tx_fraud_scenario'] = 0
 
     # Scenario 1
-    transactions_df.loc[transactions_df.tx_amount > 220, 'tx_fraud'] = 1
-    transactions_df.loc[transactions_df.tx_amount > 220, 'tx_fraud_scenario'] = 1
+    transactions_df.loc[transactions_df.tx_amount > 160, 'tx_fraud'] = 1
+    transactions_df.loc[transactions_df.tx_amount > 160, 'tx_fraud_scenario'] = 1
     nb_frauds_scenario_1 = transactions_df.tx_fraud.sum()
-    logging.info("Number of frauds from scenario 1: " + str(nb_frauds_scenario_1))
+    logging.info(f"Number of frauds from scenario 1: "
+                 f"{nb_frauds_scenario_1} – {nb_frauds_scenario_1/len(transactions_df)*100:.2f}%")
 
     # Scenario 2
-    for day in range(transactions_df.tx_time_days.max()):
-        compromised_terminals = terminal_profiles_table.terminal_id.sample(n=2, random_state=day)
+    max_days = transactions_df.tx_time_days.max()
+    for day in range(max_days):
+        compromised_terminals_num = random.randint(0, 1)
+        compromised_terminals = terminal_profiles_table.terminal_id.sample(n=compromised_terminals_num,
+                                                                           random_state=day)
 
         compromised_transactions = transactions_df[(transactions_df.tx_time_days >= day) &
-                                                   (transactions_df.tx_time_days < day + 28) &
+                                                   (transactions_df.tx_time_days < day + 3) &
                                                    (transactions_df.terminal_id.isin(compromised_terminals))]
-
+        logging.info(f"Add frauds of type 2 for day {day}/{max_days}: "
+                     f"{len(compromised_terminals)=}, {len(compromised_transactions)=}")
         transactions_df.loc[compromised_transactions.index, 'tx_fraud'] = 1
         transactions_df.loc[compromised_transactions.index, 'tx_fraud_scenario'] = 2
 
     nb_frauds_scenario_2 = transactions_df.tx_fraud.sum() - nb_frauds_scenario_1
-    logging.info("Number of frauds from scenario 2: " + str(nb_frauds_scenario_2))
+    logging.info(f"Number of frauds from scenario 2: "
+                 f"{nb_frauds_scenario_2} – {nb_frauds_scenario_2/len(transactions_df)*100:.2f}%")
 
     # Scenario 3
-    for day in range(transactions_df.tx_time_days.max()):
-        compromised_customers = customer_profiles_table.customer_id.sample(n=3, random_state=day).values
+    for day in range(max_days):
+        compromised_customers = customer_profiles_table.customer_id.sample(n=50, random_state=day).values
 
         compromised_transactions = transactions_df[(transactions_df.tx_time_days >= day) &
-                                                   (transactions_df.tx_time_days < day + 14) &
+                                                   (transactions_df.tx_time_days < day + 7) &
                                                    (transactions_df.customer_id.isin(compromised_customers))]
 
         nb_compromised_transactions = len(compromised_transactions)
 
         random.seed(day)
         index_fauds = random.sample(list(compromised_transactions.index.values), k=int(nb_compromised_transactions / 3))
+        logging.info(f"Add frauds of type 3 for day {day}/{max_days}: "
+                     f"{len(compromised_customers)=}, {len(compromised_transactions)=}, {len(index_fauds)=}")
 
         transactions_df.loc[index_fauds, 'tx_amount'] = transactions_df.loc[index_fauds, 'tx_amount'] * 5
         transactions_df.loc[index_fauds, 'tx_fraud'] = 1
         transactions_df.loc[index_fauds, 'tx_fraud_scenario'] = 3
 
     nb_frauds_scenario_3 = transactions_df.tx_fraud.sum() - nb_frauds_scenario_2 - nb_frauds_scenario_1
-    logging.info("Number of frauds from scenario 3: " + str(nb_frauds_scenario_3))
+    logging.info(f"Number of frauds from scenario 3: "
+                 f"{nb_frauds_scenario_3} – {nb_frauds_scenario_3/len(transactions_df)*100:.2f}%")
 
     return transactions_df
 
@@ -230,9 +239,9 @@ def main():
     pandarallel.initialize(progress_bar=True)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--i_customers", type=int, default=50000)
+    parser.add_argument("--i_customers", type=int, default=100000)
     parser.add_argument("--i_terminals", type=int, default=1000)
-    parser.add_argument("--i_days", type=int, default=1)
+    parser.add_argument("--i_days", type=int, default=30)
     parser.add_argument("--i_start_date", type=str, default=datetime.date.today().strftime("%Y-%m-%d"))
     parser.add_argument("--hdfs_host", type=str, required=True)
     parser.add_argument("--hdfs_dir_output", type=str, required=True)
@@ -273,23 +282,26 @@ def main():
         lambda x: get_list_terminals_within_radius(x, x_y_terminals=x_y_terminals, r=50), axis=1)
 
     transactions_df = add_frauds(customer_profiles_table, terminal_profiles_table, transactions_df)
+    logging.info(f"Transactions generated: {len(transactions_df)=}")
 
     start_date = datetime.datetime.strptime(args.i_start_date, "%Y-%m-%d")
 
-    for day in range(transactions_df.tx_time_days.max() + 1):
+    max_day = transactions_df.tx_time_days.max()
+    for day in range(max_day + 1):
         transactions_day_df = transactions_df[transactions_df.tx_time_days == day].sort_values('tx_time_seconds')
+        logging.info(f"Day {day}/{max_day}: {len(transactions_day_df)=}")
 
         date = start_date + datetime.timedelta(days=day)
         filename_output = date.strftime("%Y-%m-%d") + '.parquet'
 
         spark_df = spark.createDataFrame(transactions_day_df)
         filepath_hdfs = f"hdfs://{args.hdfs_host}{args.hdfs_dir_output}/{filename_output}"
-        logging.info(f"Writing dataframe to {filepath_hdfs=}")
+        logging.info(f"Day {day}/{max_day}: Writing dataframe to {filepath_hdfs=}")
         spark_df.write.parquet(filepath_hdfs, mode="overwrite")
 
         # if args.save_to_s3:
         filepath_s3 = f"s3a://{args.s3_bucket}{args.s3_bucket_prefix}/{filename_output}"
-        logging.info(f"Uploading data to {filepath_s3=}")
+        logging.info(f"Day {day}/{max_day}: Uploading data to {filepath_s3=}")
         spark_df.write.parquet(filepath_s3, mode="overwrite")
 
     spark.stop()

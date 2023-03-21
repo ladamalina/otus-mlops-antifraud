@@ -29,7 +29,8 @@ with DAG(
         application_args=[
             "--i_customers", str(100000),
             "--i_terminals", str(1000),
-            "--i_days", str(30),
+            # "--i_days", str(30),
+            "--i_days", str(1),
             "--i_start_date", "{{ ds }}",
             "--hdfs_host", "{{ conn.yandex_cloud_hdfs.host }}",
             "--hdfs_dir_output", "/fraud-data-auto",
@@ -38,7 +39,7 @@ with DAG(
         ],
         env_vars={"HADOOP_CONF_DIR": "/etc/hadoop/conf"},
         conf={"spark.sql.broadcastTimeout": str(60*60*3)},
-        executor_cores=4,
-        executor_memory="8g",
-        driver_memory="8g",
+        executor_cores=2,
+        # executor_memory="4g",
+        # driver_memory="4g",
     )

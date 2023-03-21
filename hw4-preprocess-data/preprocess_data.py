@@ -4,7 +4,7 @@ import findspark
 import logging
 
 from pyspark.sql import SparkSession
-from pyspark.sql import functions as F
+from pyspark.sql import functions as f
 from pyspark.sql.functions import dayofweek, col, when, hour
 from pyspark.sql.types import *
 from pyspark.sql.window import Window
@@ -25,20 +25,22 @@ dt_format_full = f"{dt_format} %H:%M:%S"
 dt_today = dt.datetime.today()
 dt_today_str = dt_today.strftime(dt_format)
 windows_size_in_days = [1, 3, 7]
-days_to_seconds = lambda i: i * 86400
 delay_window = 7
-extra_window_in_days = max(windows_size_in_days) + delay_window
+
+
+def days_to_seconds(d: int) -> int:
+    return d * 86400
 
 
 def get_customer_spending_behaviour_features(spark_df):
     for window_size in windows_size_in_days:
-        windowSpec = Window().partitionBy(["customer_id"])\
+        window_spec = Window().partitionBy(["customer_id"])\
             .orderBy(col("tx_datetime").cast("timestamp").cast("long"))\
             .rangeBetween(-days_to_seconds(window_size), 0)
         spark_df = spark_df.withColumn("customer_id_nb_tx_" + str(window_size) + "day_window",
-                                       F.count("*").over(windowSpec)).orderBy("tx_datetime")
+                                       f.count("*").over(window_spec)).orderBy("tx_datetime")
         spark_df = spark_df.withColumn("customer_id_avg_amount_" + str(window_size) + "day_window",
-                                       F.mean("tx_amount").over(windowSpec)).orderBy("tx_datetime")
+                                       f.mean("tx_amount").over(window_spec)).orderBy("tx_datetime")
 
     return spark_df
 
@@ -46,20 +48,20 @@ def get_customer_spending_behaviour_features(spark_df):
 def get_count_risk_rolling_window(spark_df):
     delay_period = days_to_seconds(delay_window)
 
-    windowSpec = Window().partitionBy(["terminal_id"])\
+    window_spec = Window().partitionBy(["terminal_id"])\
         .orderBy(col("tx_datetime").cast("timestamp").cast("long"))\
         .rangeBetween(-delay_period, 0)
-    spark_df = spark_df.withColumn("nb_fraud_delay", F.sum("tx_fraud").over(windowSpec)).orderBy("tx_datetime")
-    spark_df = spark_df.withColumn("nb_tx_delay", F.count("tx_fraud").over(windowSpec)).orderBy("tx_datetime")
+    spark_df = spark_df.withColumn("nb_fraud_delay", f.sum("tx_fraud").over(window_spec)).orderBy("tx_datetime")
+    spark_df = spark_df.withColumn("nb_tx_delay", f.count("tx_fraud").over(window_spec)).orderBy("tx_datetime")
 
     for window_size in windows_size_in_days:
-        windowSpec = Window().partitionBy(["terminal_id"])\
+        window_spec = Window().partitionBy(["terminal_id"])\
             .orderBy(col("tx_datetime").cast("timestamp").cast("long"))\
             .rangeBetween(-days_to_seconds(window_size) - delay_period, 0)
         spark_df = spark_df.withColumn("nb_fraud_delay_window",
-                                       F.sum("tx_fraud").over(windowSpec)).orderBy("tx_datetime")
+                                       f.sum("tx_fraud").over(window_spec)).orderBy("tx_datetime")
         spark_df = spark_df.withColumn("nb_tx_delay_window",
-                                       F.count("tx_fraud").over(windowSpec)).orderBy("tx_datetime")
+                                       f.count("tx_fraud").over(window_spec)).orderBy("tx_datetime")
         spark_df = spark_df.withColumn("nb_fraud_window",
                                        spark_df["nb_fraud_delay_window"] - spark_df["nb_fraud_delay"])
 
@@ -95,8 +97,8 @@ def get_preprocessed_data(spark: SparkSession, dt_from: dt.datetime, dt_to: dt.d
     # hdfs_dirs_input = [f"{_}/*.parquet" for _ in hdfs_dirs_input]
     logging.info(f"Reading {hdfs_dirs_input}")
     df = spark.read.schema(schema).parquet(*hdfs_dirs_input)
-    dt_from_extra = dt_from - dt.timedelta(days=extra_window_in_days)
-    logging.info(f"Extending {dt_from=} using {extra_window_in_days=}, {dt_from_extra=}")
+    dt_from_extra = dt_from - dt.timedelta(days=delay_window)
+    logging.info(f"Extending {dt_from=} using {delay_window=}, {dt_from_extra=}")
     logging.info(f"Preprocess data using window {dt_from_extra} <= dt <= {dt_to}")
     transactions_df = df.filter((df.tx_datetime >= dt_from_extra) & (df.tx_datetime <= dt_to))
     logging.info(f"Rows to process: {transactions_df.count()}")
@@ -124,17 +126,6 @@ def main():
         datefmt='%Y-%m-%d %H:%M:%S',
     )
 
-    findspark.init()
-    findspark.find()
-
-    spark = (
-        SparkSession.builder
-        .appName("preprocess_data")
-        .master("yarn")
-        .getOrCreate()
-    )
-    spark.conf.set("spark.sql.repl.eagerEval.enabled", True)
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--date_from", type=str, default=dt_today_str)
     parser.add_argument("--date_to", type=str, default=dt_today_str)
@@ -160,6 +151,18 @@ def main():
     logging.info(f"{args.hdfs_dir_output=}")
     logging.info(f"{args.s3_bucket=}")
     logging.info(f"{args.s3_bucket_prefix=}")
+
+    findspark.init()
+    findspark.find()
+
+    spark = (
+        SparkSession.builder
+        .appName("preprocess_data")
+        .master("yarn")
+        .config("spark.executor.cores", "2")
+        .getOrCreate()
+    )
+    spark.conf.set("spark.sql.repl.eagerEval.enabled", True)
 
     df = get_preprocessed_data(spark, dt_from, dt_to, hdfs_dirs_input)
 

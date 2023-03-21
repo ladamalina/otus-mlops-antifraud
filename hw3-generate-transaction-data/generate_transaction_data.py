@@ -31,10 +31,10 @@ def generate_customer_profiles_table(n_customers, random_state=0):
                                        mean_amount, std_amount,
                                        mean_nb_tx_per_day])
 
-    customer_profiles_table = pd.DataFrame(customer_id_properties, columns=['customer_id',
-                                                                            'x_customer_id', 'y_customer_id',
-                                                                            'mean_amount', 'std_amount',
-                                                                            'mean_nb_tx_per_day'])
+    customer_profiles_table = pd.DataFrame(customer_id_properties, columns=["customer_id",
+                                                                            "x_customer_id", "y_customer_id",
+                                                                            "mean_amount", "std_amount",
+                                                                            "mean_nb_tx_per_day"])
 
     return customer_profiles_table
 
@@ -43,7 +43,7 @@ def get_list_terminals_within_radius(customer_profile, x_y_terminals, r):
     # Use numpy arrays in the following to speed up computations
 
     # Location (x,y) of customer as numpy array
-    x_y_customer = customer_profile[['x_customer_id', 'y_customer_id']].values.astype(float)
+    x_y_customer = customer_profile[["x_customer_id", "y_customer_id"]].values.astype(float)
 
     # Squared difference in coordinates between customer and terminal locations
     squared_diff_x_y = np.square(x_y_customer - x_y_terminals)
@@ -99,14 +99,14 @@ def generate_transactions_table(customer_profile, start_date, nb_days):
                                                       terminal_id, amount])
 
     customer_transactions = pd.DataFrame(customer_transactions,
-                                         columns=['tx_time_seconds', 'tx_time_days', 'customer_id', 'terminal_id',
-                                                  'tx_amount'])
+                                         columns=["tx_time_seconds", "tx_time_days", "customer_id", "terminal_id",
+                                                  "tx_amount"])
 
     if len(customer_transactions) > 0:
-        customer_transactions['tx_datetime'] = pd.to_datetime(customer_transactions["tx_time_seconds"], unit='s',
+        customer_transactions["tx_datetime"] = pd.to_datetime(customer_transactions["tx_time_seconds"], unit="s",
                                                               origin=start_date)
         customer_transactions = customer_transactions[
-            ['tx_datetime', 'customer_id', 'terminal_id', 'tx_amount', 'tx_time_seconds', 'tx_time_days']]
+            ["tx_datetime", "customer_id", "terminal_id", "tx_amount", "tx_time_seconds", "tx_time_days"]]
 
     return customer_transactions
 
@@ -121,31 +121,31 @@ def generate_dataset(n_customers=50000, n_terminals=100, nb_days=1, start_date="
     logging.info("Time to generate terminal profiles table: {0:.3f}s".format(time.time() - start_time))
 
     start_time = time.time()
-    x_y_terminals = terminal_profiles_table[['x_terminal_id', 'y_terminal_id']].values.astype(float)
-    # customer_profiles_table['available_terminals'] = customer_profiles_table.apply(
+    x_y_terminals = terminal_profiles_table[["x_terminal_id", "y_terminal_id"]].values.astype(float)
+    # customer_profiles_table["available_terminals"] = customer_profiles_table.apply(
     #     lambda x: get_list_terminals_within_radius(x, x_y_terminals=x_y_terminals, r=r), axis=1)
     # With Pandarallel
-    customer_profiles_table['available_terminals'] = customer_profiles_table\
+    customer_profiles_table["available_terminals"] = customer_profiles_table\
         .parallel_apply(lambda x: get_list_terminals_within_radius(x, x_y_terminals=x_y_terminals, r=r), axis=1)
-    customer_profiles_table['nb_terminals'] = customer_profiles_table.available_terminals.apply(len)
+    customer_profiles_table["nb_terminals"] = customer_profiles_table.available_terminals.apply(len)
     logging.info("Time to associate terminals to customers: {0:.3f}s".format(time.time() - start_time))
 
     start_time = time.time()
-    # transactions_df = customer_profiles_table.groupby('customer_id').apply(
+    # transactions_df = customer_profiles_table.groupby("customer_id").apply(
     #     lambda x: generate_transactions_table(x.iloc[0], start_date, nb_days=nb_days)).reset_index(drop=True)
     # With Pandarallel
-    transactions_df = customer_profiles_table.groupby('customer_id')\
+    transactions_df = customer_profiles_table.groupby("customer_id")\
         .parallel_apply(lambda x: generate_transactions_table(x.iloc[0], start_date, nb_days=nb_days))\
         .reset_index(drop=True)
     logging.info("Time to generate transactions: {0:.3f}s".format(time.time() - start_time))
 
     # Sort transactions chronologically
-    transactions_df = transactions_df.sort_values('tx_datetime')
+    transactions_df = transactions_df.sort_values("tx_datetime")
     # Reset indices, starting from 0
     transactions_df.reset_index(inplace=True, drop=True)
     transactions_df.reset_index(inplace=True)
     # TRANSACTION_ID are the dataframe indices, starting from 0
-    transactions_df.rename(columns={'index': 'transaction_id'}, inplace=True)
+    transactions_df.rename(columns={"index": "transaction_id"}, inplace=True)
 
     return customer_profiles_table, terminal_profiles_table, transactions_df
 
@@ -163,65 +163,79 @@ def generate_terminal_profiles_table(n_terminals, random_state=0):
         terminal_id_properties.append([terminal_id,
                                        x_terminal_id, y_terminal_id])
 
-    terminal_profiles_table = pd.DataFrame(terminal_id_properties, columns=['terminal_id',
-                                                                            'x_terminal_id', 'y_terminal_id'])
+    terminal_profiles_table = pd.DataFrame(terminal_id_properties, columns=["terminal_id",
+                                                                            "x_terminal_id", "y_terminal_id"])
 
     return terminal_profiles_table
 
 
-def add_frauds(customer_profiles_table, terminal_profiles_table, transactions_df):
+def add_frauds(customer_profiles_table, terminal_profiles_table, transactions_df, smart_mode: bool = True):
     # By default, all transactions are genuine
-    transactions_df['tx_fraud'] = 0
-    transactions_df['tx_fraud_scenario'] = 0
+    transactions_df["tx_fraud"] = 0
+    transactions_df["tx_fraud_scenario"] = 0
 
     # Scenario 1
-    transactions_df.loc[transactions_df.tx_amount > 160, 'tx_fraud'] = 1
-    transactions_df.loc[transactions_df.tx_amount > 160, 'tx_fraud_scenario'] = 1
+    transactions_df.loc[transactions_df.tx_amount > 160, "tx_fraud"] = 1
+    transactions_df.loc[transactions_df.tx_amount > 160, "tx_fraud_scenario"] = 1
     nb_frauds_scenario_1 = transactions_df.tx_fraud.sum()
     logging.info(f"Number of frauds from scenario 1: "
                  f"{nb_frauds_scenario_1} – {nb_frauds_scenario_1/len(transactions_df)*100:.2f}%")
 
-    # Scenario 2
     max_days = transactions_df.tx_time_days.max()
-    for day in range(max_days):
-        compromised_terminals_num = random.randint(0, 1)
-        compromised_terminals = terminal_profiles_table.terminal_id.sample(n=compromised_terminals_num,
-                                                                           random_state=day)
 
-        compromised_transactions = transactions_df[(transactions_df.tx_time_days >= day) &
-                                                   (transactions_df.tx_time_days < day + 3) &
-                                                   (transactions_df.terminal_id.isin(compromised_terminals))]
-        logging.info(f"Add frauds of type 2 for day {day}/{max_days}: "
-                     f"{len(compromised_terminals)=}, {len(compromised_transactions)=}")
-        transactions_df.loc[compromised_transactions.index, 'tx_fraud'] = 1
-        transactions_df.loc[compromised_transactions.index, 'tx_fraud_scenario'] = 2
+    if smart_mode:
+        # Scenario 2
+        for day in range(max_days + 1):
+            compromised_terminals_num = random.randint(0, 1)
+            compromised_terminals = terminal_profiles_table.terminal_id.sample(n=compromised_terminals_num)
 
-    nb_frauds_scenario_2 = transactions_df.tx_fraud.sum() - nb_frauds_scenario_1
-    logging.info(f"Number of frauds from scenario 2: "
-                 f"{nb_frauds_scenario_2} – {nb_frauds_scenario_2/len(transactions_df)*100:.2f}%")
+            compromised_transactions = transactions_df[(transactions_df.tx_time_days >= day) &
+                                                       (transactions_df.tx_time_days < day + 3) &
+                                                       (transactions_df.terminal_id.isin(compromised_terminals))]
+            logging.info(f"Add frauds of type 2 for day {day}/{max_days}: "
+                         f"{len(compromised_terminals)=}, {len(compromised_transactions)=}")
+            transactions_df.loc[compromised_transactions.index, "tx_fraud"] = 1
+            transactions_df.loc[compromised_transactions.index, "tx_fraud_scenario"] = 2
 
-    # Scenario 3
-    for day in range(max_days):
-        compromised_customers = customer_profiles_table.customer_id.sample(n=50, random_state=day).values
+        nb_frauds_scenario_2 = transactions_df.tx_fraud.sum() - nb_frauds_scenario_1
+        logging.info(f"Number of frauds from scenario 2: "
+                     f"{nb_frauds_scenario_2} – {nb_frauds_scenario_2 / len(transactions_df) * 100:.2f}%")
 
-        compromised_transactions = transactions_df[(transactions_df.tx_time_days >= day) &
-                                                   (transactions_df.tx_time_days < day + 7) &
-                                                   (transactions_df.customer_id.isin(compromised_customers))]
+        # Scenario 3
+        for day in range(max_days + 1):
+            compromised_customers = customer_profiles_table.customer_id.sample(n=50).values
 
-        nb_compromised_transactions = len(compromised_transactions)
+            compromised_transactions = transactions_df[(transactions_df.tx_time_days >= day) &
+                                                       (transactions_df.tx_time_days < day + 7) &
+                                                       (transactions_df.customer_id.isin(compromised_customers))]
 
-        random.seed(day)
-        index_fauds = random.sample(list(compromised_transactions.index.values), k=int(nb_compromised_transactions / 3))
-        logging.info(f"Add frauds of type 3 for day {day}/{max_days}: "
-                     f"{len(compromised_customers)=}, {len(compromised_transactions)=}, {len(index_fauds)=}")
+            nb_compromised_transactions = len(compromised_transactions)
 
-        transactions_df.loc[index_fauds, 'tx_amount'] = transactions_df.loc[index_fauds, 'tx_amount'] * 5
-        transactions_df.loc[index_fauds, 'tx_fraud'] = 1
-        transactions_df.loc[index_fauds, 'tx_fraud_scenario'] = 3
+            index_fauds = random.sample(list(compromised_transactions.index.values),
+                                        k=int(nb_compromised_transactions / 3))
+            logging.info(f"Add frauds of type 3 for day {day}/{max_days}: "
+                         f"{len(compromised_customers)=}, {len(compromised_transactions)=}, {len(index_fauds)=}")
 
-    nb_frauds_scenario_3 = transactions_df.tx_fraud.sum() - nb_frauds_scenario_2 - nb_frauds_scenario_1
-    logging.info(f"Number of frauds from scenario 3: "
-                 f"{nb_frauds_scenario_3} – {nb_frauds_scenario_3/len(transactions_df)*100:.2f}%")
+            transactions_df.loc[index_fauds, "tx_amount"] = transactions_df.loc[index_fauds, "tx_amount"] * 5
+            transactions_df.loc[index_fauds, "tx_fraud"] = 1
+            transactions_df.loc[index_fauds, "tx_fraud_scenario"] = 3
+
+        nb_frauds_scenario_3 = transactions_df.tx_fraud.sum() - nb_frauds_scenario_2 - nb_frauds_scenario_1
+        logging.info(f"Number of frauds from scenario 3: "
+                     f"{nb_frauds_scenario_3} – {nb_frauds_scenario_3/len(transactions_df)*100:.2f}%")
+
+    else:  # simplified
+        # Scenario 2
+        for day in range(max_days + 1):
+            compromised_transactions_df = transactions_df[(transactions_df.tx_time_days >= day) &
+                                                           (transactions_df.tx_time_days < day + 1)].sample(10)
+            logging.info(f"Add frauds of type 2 for day {day}/{max_days}: {len(compromised_transactions_df)=}")
+            transactions_df.loc[compromised_transactions_df.index, "tx_fraud"] = 1
+            transactions_df.loc[compromised_transactions_df.index, "tx_fraud_scenario"] = 2
+
+        nb_frauds_scenario_2 = transactions_df.tx_fraud.sum() - nb_frauds_scenario_1
+        logging.info(f"Number of frauds from scenario 2: "
+                     f"{nb_frauds_scenario_2} – {nb_frauds_scenario_2 / len(transactions_df) * 100:.2f}%")
 
     return transactions_df
 
@@ -229,14 +243,14 @@ def add_frauds(customer_profiles_table, terminal_profiles_table, transactions_df
 def main():
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S',
+        format="%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
 
     findspark.init()
     findspark.find()
 
-    pandarallel.initialize(progress_bar=True)
+    pandarallel.initialize(progress_bar=True, nb_workers=2)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--i_customers", type=int, default=100000)
@@ -262,10 +276,11 @@ def main():
         SparkSession.builder
         .appName("generate_transaction_data")
         .master("yarn")
+        .config("spark.executor.cores", "2")
         .config("spark.sql.broadcastTimeout", str(60 * 60 * 3))
         .getOrCreate()
     )
-    spark.conf.set('spark.sql.repl.eagerEval.enabled', True)
+    spark.conf.set("spark.sql.repl.eagerEval.enabled", True)
 
     (customer_profiles_table, terminal_profiles_table, transactions_df) = \
         generate_dataset(n_customers=args.i_customers,
@@ -274,25 +289,25 @@ def main():
                          start_date=args.i_start_date,
                          r=5)
 
-    x_y_terminals = terminal_profiles_table[['x_terminal_id', 'y_terminal_id']].values.astype(float)
+    x_y_terminals = terminal_profiles_table[["x_terminal_id", "y_terminal_id"]].values.astype(float)
     # And get the list of terminals within radius of $50$ for the last customer
     get_list_terminals_within_radius(customer_profiles_table.iloc[4], x_y_terminals=x_y_terminals, r=50)
 
-    customer_profiles_table['available_terminals'] = customer_profiles_table.apply(
+    customer_profiles_table["available_terminals"] = customer_profiles_table.apply(
         lambda x: get_list_terminals_within_radius(x, x_y_terminals=x_y_terminals, r=50), axis=1)
 
-    transactions_df = add_frauds(customer_profiles_table, terminal_profiles_table, transactions_df)
+    transactions_df = add_frauds(customer_profiles_table, terminal_profiles_table, transactions_df, smart_mode=False)
     logging.info(f"Transactions generated: {len(transactions_df)=}")
 
     start_date = datetime.datetime.strptime(args.i_start_date, "%Y-%m-%d")
 
     max_day = transactions_df.tx_time_days.max()
     for day in range(max_day + 1):
-        transactions_day_df = transactions_df[transactions_df.tx_time_days == day].sort_values('tx_time_seconds')
+        transactions_day_df = transactions_df[transactions_df.tx_time_days == day].sort_values("tx_time_seconds")
         logging.info(f"Day {day}/{max_day}: {len(transactions_day_df)=}")
 
         date = start_date + datetime.timedelta(days=day)
-        filename_output = date.strftime("%Y-%m-%d") + '.parquet'
+        filename_output = date.strftime("%Y-%m-%d") + ".parquet"
 
         spark_df = spark.createDataFrame(transactions_day_df)
         filepath_hdfs = f"hdfs://{args.hdfs_host}{args.hdfs_dir_output}/{filename_output}"
